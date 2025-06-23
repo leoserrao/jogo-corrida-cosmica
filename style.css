@@ -1,0 +1,165 @@
+:root {
+    --board-bg: #0d1a2d;
+    --square-bg: #1f3a5f;
+    --square-border: #5a7a9f;
+    --player1-color: #3498db;
+    --player2-color: #2ecc71;
+    --text-color: #ecf0f1;
+    --button-bg: #e67e22;
+    --button-hover-bg: #d35400;
+    --finish-line-color: #f1c40f;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--board-bg);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    text-align: center;
+}
+
+main {
+    padding: 20px;
+    border-radius: 15px;
+    background-color: #152944;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.instructions {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    line-height: 1.6;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(10, 60px);
+    grid-auto-rows: 60px;
+    gap: 5px;
+    padding: 10px;
+    background-color: #0b1424;
+    border-radius: 10px;
+    position: relative; /* Para posicionar as peças */
+    width: fit-content;
+}
+
+.square {
+    background-color: var(--square-bg);
+    border: 2px solid var(--square-border);
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    position: relative;
+}
+
+.square.start {
+    background-color: var(--player1-color);
+    color: white;
+}
+
+.square.finish {
+    background-color: var(--finish-line-color);
+    color: black;
+    font-size: 1.5em;
+}
+.square.finish::after {
+    content: '🪐';
+    font-size: 24px;
+}
+
+.piece {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    transition: all 0.5s ease-in-out;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+}
+
+#player1 {
+    background-color: var(--player1-color);
+    box-shadow: 0 0 10px var(--player1-color);
+}
+#player1::after { content: '🚀'; }
+
+#player2 {
+    background-color: var(--player2-color);
+    box-shadow: 0 0 10px var(--player2-color);
+    transform: translateX(10px); /* Leve deslocamento para não sobrepor */
+}
+#player2::after { content: '🛸'; }
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+#dice-container {
+    perspective: 1000px;
+}
+
+#dice {
+    width: 60px;
+    height: 60px;
+    background-color: #fff;
+    color: #000;
+    border: 2px solid #333;
+    border-radius: 10px;
+    font-size: 2.5em;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.5s;
+}
+
+#roll-button {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--button-bg);
+    color: white;
+    transition: background-color 0.3s;
+}
+
+#roll-button:hover, #roll-button:focus {
+    background-color: var(--button-hover-bg);
+    outline: 3px solid var(--finish-line-color);
+}
+
+#roll-button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+#status-message {
+    margin-top: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    min-height: 2em;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 5px;
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrida Cósmica - Jogo Acessível</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main>
+        <header>
+            <h1>Corrida Cósmica 🚀</h1>
+            <p class="instructions">
+                Chegue ao planeta final antes do seu oponente!
+                <br>
+                <strong>Controles:</strong> Clique em "Lançar Dado" ou pressione a <strong>Barra de Espaço</strong> e diga <strong>"jogar"</strong>.
+            </p>
+        </header>
+
+        <div class="game-container">
+            <div id="game-board">
+                <!-- Casas do tabuleiro serão geradas pelo Javascript -->
+                <div class="piece" id="player1" aria-label="Sua peça (Foguete Azul)"></div>
+                <div class="piece" id="player2" aria-label="Peça do computador (OVNI Verde)"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div id="dice-container">
+                <div id="dice" aria-label="Dado" role="img">1</div>
+            </div>
+            <button id="roll-button" aria-label="Lançar o dado">Lançar Dado</button>
+        </div>
+
+        <div id="status-message" role="status" aria-live="polite">
+            Bem-vindo! Clique no botão ou use a voz para começar.
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
