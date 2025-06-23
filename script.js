@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rollButton = document.getElementById('roll-button');
     const statusMessage = document.getElementById('status-message');
 
-    // --- Sistema de Fila para a Síntese de Voz (sem alterações) ---
+    // --- Sistema de Fila para a Síntese de Voz ---
     const synth = window.speechSynthesis;
     let speechQueue = [];
     let isSpeaking = false;
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         processSpeechQueue();
     }
 
-    // --- Reconhecimento de Voz (sem alterações) ---
+    // --- Reconhecimento de Voz ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     if (SpeechRecognition) {
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- Funções do Jogo (Refatoradas) ---
+    // --- Funções do Jogo ---
 
     function updateStatus(message, shouldSpeak = true) {
         statusMessage.textContent = message;
@@ -115,6 +115,34 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
+    /**
+     * MODIFICADO: Transforma movePiece em uma função que retorna uma Promise.
+     * A Promise resolve depois que a animação da peça e a mensagem de movimento são acionadas.
+     */
+    function movePiece(player, steps) {
+        return new Promise(resolve => {
+            playerPositions[player] += steps;
+            if (playerPositions[player] >= BOARD_SIZE) {
+                playerPositions[player] = BOARD_SIZE;
+            }
+
+            updatePiecePositions();
+
+            const playerName = player === 1 ? "Você" : "O computador";
+            
+            // Atraso para sincronizar com a animação da peça no CSS.
+            setTimeout(() => {
+                updateStatus(`${playerName} avançou para a casa ${playerPositions[player]}.`, true);
+                
+                if (playerPositions[player] >= BOARD_SIZE) {
+                    setTimeout(() => endGame(player), 1500);
+                }
+                
+                resolve(); // A Promise é resolvida aqui.
+            }, 600); // Um pouco mais que a animação (0.5s)
+        });
+    }
+
     async function handlePlayerTurn() {
         if (!gameActive || currentPlayer !== 1) return;
 
@@ -123,13 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const diceResult = rollDice();
         queueSpeech(`Você tirou ${diceResult}!`);
-
         await new Promise(resolve => setTimeout(resolve, 1000));
-        movePiece(1, diceResult);
+        
+        // MODIFICADO: Espera a conclusão do movimento.
+        await movePiece(1, diceResult);
 
         if (gameActive) {
             currentPlayer = 2;
-            setTimeout(handleCpuTurn, 2500);
+            setTimeout(handleCpuTurn, 2000); // Aumenta um pouco a pausa.
         }
     }
 
@@ -143,62 +172,34 @@ document.addEventListener('DOMContentLoaded', () => {
         queueSpeech(`O computador tirou ${diceResult}!`);
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        movePiece(2, diceResult);
+        // MODIFICADO: Espera a função movePiece terminar.
+        await movePiece(2, diceResult);
 
-        // CORREÇÃO CRÍTICA: O turno do computador termina aqui. Ele apenas
-        // prepara o cenário para o jogador 1, mas NÃO o invoca.
+        // MODIFICADO: Este bloco agora só executa APÓS a narração do movimento do computador.
         if (gameActive) {
             currentPlayer = 1;
             rollButton.disabled = false;
-            updateStatus("Sua vez. Lance o dado!", true);
+            // Adiciona uma pequena pausa para dar um respiro antes da próxima narração.
+            setTimeout(() => {
+                updateStatus("Sua vez. Lance o dado!", true);
+            }, 500);
         }
     }
-
-    function movePiece(player, steps) {
-        playerPositions[player] += steps;
-        if (playerPositions[player] >= BOARD_SIZE) {
-            playerPositions[player] = BOARD_SIZE;
-        }
-
-        updatePiecePositions();
-
-        const playerName = player === 1 ? "Você" : "O computador";
-        setTimeout(() => {
-            updateStatus(`${playerName} avançou para a casa ${playerPositions[player]}.`, true);
-        }, 500);
-
-        if (playerPositions[player] >= BOARD_SIZE) {
-            // Em vez de colocar a lógica aqui, chamamos uma função de fim de jogo
-            setTimeout(() => endGame(player), 1500);
-        }
-    }
-
-    /**
-     * NOVO: Função para finalizar o jogo e gerenciar os listeners do botão.
-     * @param {number} winner - O jogador que venceu (1 ou 2).
-     */
+    
     function endGame(winner) {
         gameActive = false;
         const winnerName = winner === 1 ? "Você" : "O computador";
         updateStatus(`${winnerName} venceu a corrida cósmica!`, true);
 
-        // Remove o listener de "jogar" para não ser acionado acidentalmente.
         rollButton.removeEventListener('click', handlePlayerTurn);
-        // Adiciona um novo listener que irá REINICIAR o jogo.
         rollButton.addEventListener('click', initializeGame);
 
         rollButton.textContent = "Jogar Novamente";
         rollButton.disabled = false;
     }
 
-    /**
-     * REESTRUTURADO: Função para inicializar o jogo, agora também gerencia os listeners.
-     */
     function initializeGame() {
-        // Se esta função foi chamada pelo botão "Jogar Novamente",
-        // removemos o listener antigo para evitar que ele se acumule.
         rollButton.removeEventListener('click', initializeGame);
-        // Adiciona o listener principal para o turno do jogador.
         rollButton.addEventListener('click', handlePlayerTurn);
 
         gameActive = true;
