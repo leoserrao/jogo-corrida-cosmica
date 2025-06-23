@@ -5,16 +5,60 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPlayer = 1;
     let gameActive = true;
 
-    // --- Referências aos Elementos do DOM (usando 'let' para poder reatribuir) ---
-    let board = document.getElementById('game-board');
+    // --- Referências aos Elementos do DOM ---
+    const board = document.getElementById('game-board');
     let player1Piece = document.getElementById('player1');
     let player2Piece = document.getElementById('player2');
     const diceElement = document.getElementById('dice');
     const rollButton = document.getElementById('roll-button');
     const statusMessage = document.getElementById('status-message');
 
-    // --- Configuração da Síntese e Reconhecimento de Voz ---
+    // --- CORREÇÃO: Sistema de Fila para a Síntese de Voz ---
     const synth = window.speechSynthesis;
+    let speechQueue = []; // A fila de mensagens a serem faladas
+    let isSpeaking = false; // Flag para controlar o estado da fala
+
+    /**
+     * Processa a próxima mensagem na fila de fala.
+     * É chamada quando uma fala termina, criando um ciclo.
+     */
+    function processSpeechQueue() {
+        if (isSpeaking || speechQueue.length === 0) {
+            return; // Se já estiver falando ou a fila estiver vazia, não faz nada
+        }
+        isSpeaking = true;
+        const textToSpeak = speechQueue.shift(); // Pega a primeira mensagem da fila
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.1;
+
+        // Quando a fala terminar, permite que a próxima seja processada
+        utterance.onend = () => {
+            isSpeaking = false;
+            // Pequeno atraso para soar mais natural entre as frases
+            setTimeout(processSpeechQueue, 150); 
+        };
+        
+        // Em caso de erro, também continua para a próxima
+        utterance.onerror = () => {
+            console.error("Ocorreu um erro na síntese de voz.");
+            isSpeaking = false;
+            processSpeechQueue();
+        };
+
+        synth.speak(utterance);
+    }
+
+    /**
+     * Adiciona uma mensagem à fila de fala em vez de falar diretamente.
+     * @param {string} text - O texto a ser adicionado na fila.
+     */
+    function queueSpeech(text) {
+        speechQueue.push(text);
+        processSpeechQueue(); // Tenta iniciar o processo de fala
+    }
+    // --- Fim da Correção do Sistema de Voz ---
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
 
@@ -22,16 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
         recognition = new SpeechRecognition();
         recognition.lang = 'pt-BR';
         recognition.continuous = false;
-        
         recognition.onresult = (event) => {
             const command = event.results[0][0].transcript.toLowerCase();
-            if (command.includes('jogar') || command.includes('lançar')) {
-                if (currentPlayer === 1 && gameActive) {
-                    handlePlayerTurn();
-                }
+            if ((command.includes('jogar') || command.includes('lançar')) && currentPlayer === 1 && gameActive) {
+                handlePlayerTurn();
             }
         };
-
         recognition.onerror = (event) => {
             console.error('Erro no reconhecimento de voz:', event.error);
             updateStatus('Não consegui entender. Tente novamente.', false);
@@ -41,22 +81,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.instructions').innerHTML += '<br><small>Seu navegador não suporta comandos de voz.</small>';
     }
 
-    // --- Funções Principais do Jogo ---
-
-    function speak(text) {
-        if (synth.speaking) {
-            synth.cancel();
-        }
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 1.1;
-        synth.speak(utterance);
-    }
-
+    /**
+     * Atualiza a mensagem de status na tela e opcionalmente a adiciona à fila de fala.
+     * @param {string} message - A mensagem a ser exibida.
+     * @param {boolean} shouldSpeak - Se a mensagem deve ser falada.
+     */
     function updateStatus(message, shouldSpeak = true) {
         statusMessage.textContent = message;
         if (shouldSpeak) {
-            speak(message);
+            queueSpeech(message); // MODIFICADO: Usa a fila em vez de falar diretamente
         }
     }
 
@@ -72,33 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * CORREÇÃO: Atualiza a posição visual das peças no tabuleiro.
-     * Agora lida explicitamente com a posição inicial '0' (fora do tabuleiro).
-     */
     function updatePiecePositions() {
         const boardPos = board.getBoundingClientRect();
-
-        // Posição do Jogador 1
         if (playerPositions[1] > 0) {
             const square = document.getElementById(`square-${playerPositions[1]}`);
             const pos = square.getBoundingClientRect();
             player1Piece.style.top = `${pos.top - boardPos.top + 10}px`;
             player1Piece.style.left = `${pos.left - boardPos.left + 10}px`;
         } else {
-            // Posição inicial (fora do tabuleiro)
             player1Piece.style.top = '-50px';
             player1Piece.style.left = '10px';
         }
 
-        // Posição do Jogador 2 (CPU)
         if (playerPositions[2] > 0) {
             const square = document.getElementById(`square-${playerPositions[2]}`);
             const pos = square.getBoundingClientRect();
             player2Piece.style.top = `${pos.top - boardPos.top + 10}px`;
             player2Piece.style.left = `${pos.left - boardPos.left + 10}px`;
         } else {
-            // Posição inicial (fora do tabuleiro, com um pequeno deslocamento)
             player2Piece.style.top = '-50px';
             player2Piece.style.left = '70px';
         }
@@ -120,10 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePiecePositions();
         
         const playerName = player === 1 ? "Você" : "O computador";
-        // Atraso na mensagem para dar tempo da animação da peça ocorrer
         setTimeout(() => {
             updateStatus(`${playerName} avançou para a casa ${playerPositions[player]}.`, true);
-        }, 500); // 500ms corresponde à transição no CSS
+        }, 500);
 
         if (playerPositions[player] >= BOARD_SIZE) {
             gameActive = false;
@@ -132,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatus(`${winnerName} venceu a corrida cósmica!`, true);
                 rollButton.textContent = "Jogar Novamente";
                 rollButton.disabled = false;
-                // Ao clicar, chama a função de inicialização
                 rollButton.onclick = initializeGame;
             }, 1500);
         }
@@ -142,10 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gameActive || currentPlayer !== 1) return;
         
         rollButton.disabled = true;
-        updateStatus("Sua vez. Lançando o dado...", false);
+        updateStatus("Sua vez de jogar...", false);
 
         const diceResult = rollDice();
-        speak(`Você tirou ${diceResult}!`);
+        queueSpeech(`Você tirou ${diceResult}!`); // MODIFICADO: Usa a fila
 
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -165,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         const diceResult = rollDice();
-        speak(`O computador tirou ${diceResult}!`);
+        queueSpeech(`O computador tirou ${diceResult}!`); // MODIFICADO: Usa a fila
         
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -178,15 +200,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * CORREÇÃO: Inicializa ou reinicia o jogo corretamente.
-     */
     function initializeGame() {
         gameActive = true;
         currentPlayer = 1;
         playerPositions = { 1: 0, 2: 0 };
         
-        // Limpa o tabuleiro para recriá-lo
+        // CORREÇÃO: Limpa a fila e cancela qualquer fala pendente do jogo anterior
+        if (synth.speaking) {
+            synth.cancel();
+        }
+        speechQueue = [];
+        isSpeaking = false;
+
         board.innerHTML = `
             <div class="piece" id="player1" aria-label="Sua peça (Foguete Azul)"></div>
             <div class="piece" id="player2" aria-label="Peça do computador (OVNI Verde)"></div>
@@ -194,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createBoard();
         
-        // CORREÇÃO CRÍTICA: Reatribui as variáveis às novas peças no DOM
         player1Piece = document.getElementById('player1');
         player2Piece = document.getElementById('player2');
         
@@ -202,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         rollButton.textContent = "Lançar Dado";
         rollButton.disabled = false;
-        // Garante que o clique chame a função de turno do jogador
         rollButton.onclick = handlePlayerTurn;
         
         updateStatus("Bem-vindo à Corrida Cósmica! É a sua vez.", true);
@@ -210,22 +233,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listeners ---
     rollButton.addEventListener('click', handlePlayerTurn);
-
     window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && rollButton.disabled === false) {
+        if (e.code === 'Space' && !rollButton.disabled) {
             e.preventDefault();
             if (recognition && currentPlayer === 1 && gameActive) {
                 try {
                     updateStatus("Ouvindo... Diga 'jogar'!", false);
                     recognition.start();
                 } catch (err) {
-                    // Evita erro caso o reconhecimento já esteja em execução
                     console.warn("Reconhecimento de voz já estava ativo.");
                 }
             }
         }
     });
-
     window.addEventListener('resize', updatePiecePositions);
     
     // --- Início do Jogo ---
