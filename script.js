@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Variáveis Globais e Configurações ---
     const BOARD_SIZE = 30;
-    const playerPositions = { 1: 0, 2: 0 };
+    let playerPositions = { 1: 0, 2: 0 };
     let currentPlayer = 1;
     let gameActive = true;
 
-    // --- Referências aos Elementos do DOM ---
-    const board = document.getElementById('game-board');
-    const player1Piece = document.getElementById('player1');
-    const player2Piece = document.getElementById('player2');
+    // --- Referências aos Elementos do DOM (usando 'let' para poder reatribuir) ---
+    let board = document.getElementById('game-board');
+    let player1Piece = document.getElementById('player1');
+    let player2Piece = document.getElementById('player2');
     const diceElement = document.getElementById('dice');
     const rollButton = document.getElementById('roll-button');
     const statusMessage = document.getElementById('status-message');
@@ -43,13 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Funções Principais do Jogo ---
 
-    /**
-     * Fala um texto usando a API de Síntese de Voz.
-     * @param {string} text - O texto a ser falado.
-     */
     function speak(text) {
         if (synth.speaking) {
-            synth.cancel(); // Cancela falas anteriores para não sobrepor
+            synth.cancel();
         }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'pt-BR';
@@ -57,11 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         synth.speak(utterance);
     }
 
-    /**
-     * Atualiza a mensagem de status na tela e opcionalmente a fala.
-     * @param {string} message - A mensagem a ser exibida.
-     * @param {boolean} shouldSpeak - Se a mensagem deve ser falada.
-     */
     function updateStatus(message, shouldSpeak = true) {
         statusMessage.textContent = message;
         if (shouldSpeak) {
@@ -69,9 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /**
-     * Cria o tabuleiro de jogo dinamicamente.
-     */
     function createBoard() {
         for (let i = 1; i <= BOARD_SIZE; i++) {
             const square = document.createElement('div');
@@ -85,27 +73,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Atualiza a posição visual das peças no tabuleiro.
+     * CORREÇÃO: Atualiza a posição visual das peças no tabuleiro.
+     * Agora lida explicitamente com a posição inicial '0' (fora do tabuleiro).
      */
     function updatePiecePositions() {
-        // Posição do Jogador 1
-        const player1Square = document.getElementById(`square-${playerPositions[1]}`) || board;
-        const pos1 = player1Square.getBoundingClientRect();
         const boardPos = board.getBoundingClientRect();
-        player1Piece.style.top = `${pos1.top - boardPos.top + 10}px`;
-        player1Piece.style.left = `${pos1.left - boardPos.left + 10}px`;
+
+        // Posição do Jogador 1
+        if (playerPositions[1] > 0) {
+            const square = document.getElementById(`square-${playerPositions[1]}`);
+            const pos = square.getBoundingClientRect();
+            player1Piece.style.top = `${pos.top - boardPos.top + 10}px`;
+            player1Piece.style.left = `${pos.left - boardPos.left + 10}px`;
+        } else {
+            // Posição inicial (fora do tabuleiro)
+            player1Piece.style.top = '-50px';
+            player1Piece.style.left = '10px';
+        }
 
         // Posição do Jogador 2 (CPU)
-        const player2Square = document.getElementById(`square-${playerPositions[2]}`) || board;
-        const pos2 = player2Square.getBoundingClientRect();
-        player2Piece.style.top = `${pos2.top - boardPos.top + 10}px`;
-        player2Piece.style.left = `${pos2.left - boardPos.left + 10}px`;
+        if (playerPositions[2] > 0) {
+            const square = document.getElementById(`square-${playerPositions[2]}`);
+            const pos = square.getBoundingClientRect();
+            player2Piece.style.top = `${pos.top - boardPos.top + 10}px`;
+            player2Piece.style.left = `${pos.left - boardPos.left + 10}px`;
+        } else {
+            // Posição inicial (fora do tabuleiro, com um pequeno deslocamento)
+            player2Piece.style.top = '-50px';
+            player2Piece.style.left = '70px';
+        }
     }
 
-    /**
-     * Rola o dado e retorna um número de 1 a 6.
-     * @returns {number} O resultado do dado.
-     */
     function rollDice() {
         const result = Math.floor(Math.random() * 6) + 1;
         diceElement.textContent = result;
@@ -113,11 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
     
-    /**
-     * Move uma peça no tabuleiro.
-     * @param {number} player - O jogador (1 ou 2).
-     * @param {number} steps - O número de casas para mover.
-     */
     function movePiece(player, steps) {
         playerPositions[player] += steps;
         if (playerPositions[player] > BOARD_SIZE) {
@@ -125,56 +118,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updatePiecePositions();
+        
         const playerName = player === 1 ? "Você" : "O computador";
-        updateStatus(`${playerName} está na casa ${playerPositions[player]}.`, true);
+        // Atraso na mensagem para dar tempo da animação da peça ocorrer
+        setTimeout(() => {
+            updateStatus(`${playerName} avançou para a casa ${playerPositions[player]}.`, true);
+        }, 500); // 500ms corresponde à transição no CSS
 
         if (playerPositions[player] >= BOARD_SIZE) {
             gameActive = false;
             setTimeout(() => {
-                updateStatus(`${playerName} venceu a corrida cósmica!`, true);
+                const winnerName = player === 1 ? "Você" : "O computador";
+                updateStatus(`${winnerName} venceu a corrida cósmica!`, true);
                 rollButton.textContent = "Jogar Novamente";
                 rollButton.disabled = false;
+                // Ao clicar, chama a função de inicialização
                 rollButton.onclick = initializeGame;
-            }, 1000);
+            }, 1500);
         }
     }
 
-    /**
-     * Gerencia o turno do jogador.
-     */
     async function handlePlayerTurn() {
         if (!gameActive || currentPlayer !== 1) return;
         
         rollButton.disabled = true;
-        updateStatus("Sua vez de jogar...", false);
+        updateStatus("Sua vez. Lançando o dado...", false);
 
         const diceResult = rollDice();
-        updateStatus(`Você tirou ${diceResult}!`, true);
+        speak(`Você tirou ${diceResult}!`);
 
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Espera para o jogador ver o resultado
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         movePiece(1, diceResult);
 
         if (gameActive) {
             currentPlayer = 2;
-            setTimeout(handleCpuTurn, 2000);
+            setTimeout(handleCpuTurn, 2500);
         }
     }
 
-    /**
-     * Gerencia o turno do computador.
-     */
     async function handleCpuTurn() {
         if (!gameActive) return;
         
         updateStatus("Vez do computador...", true);
         
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simula o CPU "pensando"
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const diceResult = rollDice();
-        updateStatus(`O computador tirou ${diceResult}!`, true);
+        speak(`O computador tirou ${diceResult}!`);
         
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         movePiece(2, diceResult);
 
@@ -186,14 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Inicializa ou reinicia o jogo.
+     * CORREÇÃO: Inicializa ou reinicia o jogo corretamente.
      */
     function initializeGame() {
         gameActive = true;
         currentPlayer = 1;
-        playerPositions[1] = 0;
-        playerPositions[2] = 0;
+        playerPositions = { 1: 0, 2: 0 };
         
+        // Limpa o tabuleiro para recriá-lo
         board.innerHTML = `
             <div class="piece" id="player1" aria-label="Sua peça (Foguete Azul)"></div>
             <div class="piece" id="player2" aria-label="Peça do computador (OVNI Verde)"></div>
@@ -201,37 +194,38 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createBoard();
         
-        // Reatribuir referências após limpar o board.innerHTML
-        const newPlayer1Piece = document.getElementById('player1');
-        const newPlayer2Piece = document.getElementById('player2');
-        player1Piece.replaceWith(newPlayer1Piece);
-        player2Piece.replaceWith(newPlayer2Piece);
+        // CORREÇÃO CRÍTICA: Reatribui as variáveis às novas peças no DOM
+        player1Piece = document.getElementById('player1');
+        player2Piece = document.getElementById('player2');
         
         updatePiecePositions();
         
         rollButton.textContent = "Lançar Dado";
         rollButton.disabled = false;
-        rollButton.onclick = handlePlayerTurn; // Garante que o clique chame a função correta
+        // Garante que o clique chame a função de turno do jogador
+        rollButton.onclick = handlePlayerTurn;
+        
         updateStatus("Bem-vindo à Corrida Cósmica! É a sua vez.", true);
     }
-
 
     // --- Event Listeners ---
     rollButton.addEventListener('click', handlePlayerTurn);
 
     window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && recognition && currentPlayer === 1 && gameActive) {
-            e.preventDefault(); // Impede que a página role
-            try {
-                updateStatus("Ouvindo... Diga 'jogar'!", false);
-                recognition.start();
-            } catch (err) {
-                console.warn("Reconhecimento já estava ativo.");
+        if (e.code === 'Space' && rollButton.disabled === false) {
+            e.preventDefault();
+            if (recognition && currentPlayer === 1 && gameActive) {
+                try {
+                    updateStatus("Ouvindo... Diga 'jogar'!", false);
+                    recognition.start();
+                } catch (err) {
+                    // Evita erro caso o reconhecimento já esteja em execução
+                    console.warn("Reconhecimento de voz já estava ativo.");
+                }
             }
         }
     });
 
-    // Ajusta a posição das peças se a janela for redimensionada
     window.addEventListener('resize', updatePiecePositions);
     
     // --- Início do Jogo ---
