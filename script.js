@@ -1,6 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Variáveis Globais e Configurações ---
-    const BOARD_SIZE = 30;
+    const CONFIG = {
+        BOARD_SIZE: 30,
+        ANIMATION_DURATION: 500, // Duração da animação da peça em ms (definido no CSS)
+        PIECE_OFFSET: 10,        // Deslocamento da peça dentro do quadrado em px
+        TIMEOUTS: {
+            POST_MOVE_SPEECH: 600,      // Deve ser um pouco > ANIMATION_DURATION
+            END_GAME_DELAY: 1500,
+            CPU_TURN_START_DELAY: 2000,
+            PRE_MOVE_DELAY: 1000,
+            POST_CPU_TURN_DELAY: 500,
+            SPEECH_QUEUE_INTERVAL: 150,
+        }
+    };
+
     let playerPositions = { 1: 0, 2: 0 };
     let currentPlayer = 1;
     let gameActive = true;
@@ -14,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusMessage = document.getElementById('status-message');
 
     // --- Sistema de Fila para a Síntese de Voz ---
-    const synth = window.speechSynthesis;
+    const synth = window.speechSynthesis; // Verificado abaixo se é suportado
     let speechQueue = [];
     let isSpeaking = false;
 
@@ -27,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         utterance.rate = 1.1;
         utterance.onend = () => {
             isSpeaking = false;
-            setTimeout(processSpeechQueue, 150);
+            setTimeout(processSpeechQueue, CONFIG.TIMEOUTS.SPEECH_QUEUE_INTERVAL);
         };
         utterance.onerror = () => {
             isSpeaking = false;
@@ -37,8 +50,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function queueSpeech(text) {
-        speechQueue.push(text);
+        // Apenas adiciona à fila se a API for suportada
+        if (synth) speechQueue.push(text);
         processSpeechQueue();
+    }
+
+    function waitForSpeechToEnd() {
+        return new Promise(resolve => {
+            const checkSpeech = () => {
+                // Resolve se a API não for suportada ou se a fala terminou
+                if (!synth || (!isSpeaking && speechQueue.length === 0)) {
+                    resolve();
+                } else {
+                    setTimeout(checkSpeech, 100); // Verifica a cada 100ms
+                }
+            };
+            checkSpeech();
+        });
     }
 
     // --- Reconhecimento de Voz ---
@@ -70,48 +98,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createBoard() {
-        for (let i = 1; i <= BOARD_SIZE; i++) {
+        for (let i = 1; i <= CONFIG.BOARD_SIZE; i++) {
             const square = document.createElement('div');
             square.classList.add('square');
             square.id = `square-${i}`;
             square.textContent = i;
-            if (i === 1) square.classList.add('start');
-            if (i === BOARD_SIZE) square.classList.add('finish');
+            if (i === 1) square.classList.add('start'); // Início
+            if (i === CONFIG.BOARD_SIZE) square.classList.add('finish'); // Fim
             board.appendChild(square);
         }
     }
 
     function updatePiecePositions() {
         const boardPos = board.getBoundingClientRect();
-        if (playerPositions[1] > 0) {
-            const square = document.getElementById(`square-${playerPositions[1]}`);
-            if (square) {
-                const pos = square.getBoundingClientRect();
-                player1Piece.style.top = `${pos.top - boardPos.top + 10}px`;
-                player1Piece.style.left = `${pos.left - boardPos.left + 10}px`;
-            }
-        } else {
-            player1Piece.style.top = '-50px';
-            player1Piece.style.left = '10px';
-        }
 
-        if (playerPositions[2] > 0) {
-            const square = document.getElementById(`square-${playerPositions[2]}`);
-            if (square) {
-                const pos = square.getBoundingClientRect();
-                player2Piece.style.top = `${pos.top - boardPos.top + 10}px`;
-                player2Piece.style.left = `${pos.left - boardPos.left + 10}px`;
+        // Pega a posição do dado para alinhar as peças fora do tabuleiro
+        const dicePos = diceElement.getBoundingClientRect();
+        // Centraliza verticalmente com o dado e posiciona à esquerda
+        const offBoardTop = `${dicePos.top - boardPos.top + (diceElement.offsetHeight / 4)}px`;
+        const offBoardLeftPlayer1 = `${dicePos.left - boardPos.left - 60}px`; // Foguete
+        const offBoardLeftPlayer2 = `${dicePos.left - boardPos.left - 110}px`; // OVNI
+
+        const updateSinglePiece = (player, pieceElement) => {
+            const currentPosition = playerPositions[player];
+            if (currentPosition > 0) {
+                const square = document.getElementById(`square-${currentPosition}`);
+                if (square) {
+                    const pos = square.getBoundingClientRect();
+                    pieceElement.style.top = `${pos.top - boardPos.top + CONFIG.PIECE_OFFSET}px`;
+                    pieceElement.style.left = `${pos.left - boardPos.left + CONFIG.PIECE_OFFSET}px`;
+                }
+            } else {
+                // Posiciona a peça fora do tabuleiro, ao lado do dado
+                pieceElement.style.top = offBoardTop;
+                pieceElement.style.left = player === 1 ? offBoardLeftPlayer1 : offBoardLeftPlayer2;
             }
-        } else {
-            player2Piece.style.top = '-50px';
-            player2Piece.style.left = '70px';
-        }
+        };
+
+        updateSinglePiece(1, player1Piece);
+        updateSinglePiece(2, player2Piece);
     }
 
     function rollDice() {
         const result = Math.floor(Math.random() * 6) + 1;
         diceElement.textContent = result;
-        diceElement.style.transform = `rotateX(${360 * Math.random()}deg) rotateY(${360 * Math.random()}deg)`;
+        // A linha abaixo, que causava a animação, foi removida.
         return result;
     }
 
@@ -122,24 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function movePiece(player, steps) {
         return new Promise(resolve => {
             playerPositions[player] += steps;
-            if (playerPositions[player] >= BOARD_SIZE) {
-                playerPositions[player] = BOARD_SIZE;
+            if (playerPositions[player] >= CONFIG.BOARD_SIZE) {
+                playerPositions[player] = CONFIG.BOARD_SIZE;
             }
 
             updatePiecePositions();
 
             const playerName = player === 1 ? "Você" : "O computador";
-            
+
             // Atraso para sincronizar com a animação da peça no CSS.
             setTimeout(() => {
                 updateStatus(`${playerName} avançou para a casa ${playerPositions[player]}.`, true);
-                
-                if (playerPositions[player] >= BOARD_SIZE) {
-                    setTimeout(() => endGame(player), 1500);
+
+                if (playerPositions[player] >= CONFIG.BOARD_SIZE) {
+                    setTimeout(() => endGame(player), CONFIG.TIMEOUTS.END_GAME_DELAY);
                 }
-                
+
                 resolve(); // A Promise é resolvida aqui.
-            }, 600); // Um pouco mais que a animação (0.5s)
+            }, CONFIG.TIMEOUTS.POST_MOVE_SPEECH);
         });
     }
 
@@ -151,14 +182,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const diceResult = rollDice();
         queueSpeech(`Você tirou ${diceResult}!`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise(resolve => setTimeout(resolve, CONFIG.TIMEOUTS.PRE_MOVE_DELAY));
+
         // MODIFICADO: Espera a conclusão do movimento.
         await movePiece(1, diceResult);
 
+        // Aguarda a narração do movimento do jogador terminar antes de passar a vez.
+        await waitForSpeechToEnd();
+
         if (gameActive) {
             currentPlayer = 2;
-            setTimeout(handleCpuTurn, 2000); // Aumenta um pouco a pausa.
+            handleCpuTurn(); // Inicia a vez do computador imediatamente após a fala.
         }
     }
 
@@ -166,26 +200,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gameActive) return;
 
         updateStatus("Vez do computador...", true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Pequena pausa para a narração inicial começar e dar ritmo ao jogo.
+        await new Promise(resolve => setTimeout(resolve, CONFIG.TIMEOUTS.POST_CPU_TURN_DELAY));
 
         const diceResult = rollDice();
         queueSpeech(`O computador tirou ${diceResult}!`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // MODIFICADO: Espera a função movePiece terminar.
         await movePiece(2, diceResult);
 
-        // MODIFICADO: Este bloco agora só executa APÓS a narração do movimento do computador.
+        await waitForSpeechToEnd();
+
         if (gameActive) {
             currentPlayer = 1;
             rollButton.disabled = false;
-            // Adiciona uma pequena pausa para dar um respiro antes da próxima narração.
-            setTimeout(() => {
-                updateStatus("Sua vez. Lance o dado!", true);
-            }, 500);
+            updateStatus("Sua vez. Lance o dado!", true);
         }
     }
-    
+
     function endGame(winner) {
         gameActive = false;
         const winnerName = winner === 1 ? "Você" : "O computador";
@@ -206,7 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlayer = 1;
         playerPositions = { 1: 0, 2: 0 };
 
-        if (synth.speaking) synth.cancel();
+        // Cancela a fala apenas se a API for suportada e estiver falando
+        if (synth && synth.speaking) synth.cancel();
         speechQueue = [];
         isSpeaking = false;
 
@@ -239,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('resize', updatePiecePositions);
-    
+
     // --- Início do Jogo ---
     initializeGame();
 });
