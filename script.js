@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const diceElement = document.getElementById('dice');
     const rollButton = document.getElementById('roll-button');
     const statusMessage = document.getElementById('status-message');
+    const contrastToggleButton = document.getElementById('contrast-toggle');
 
     // --- Sistema de Fila para a Síntese de Voz ---
     const synth = window.speechSynthesis; // Verificado abaixo se é suportado
@@ -260,6 +261,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Event Listeners Globais ---
+    
+    function applyTheme() {
+        if (localStorage.getItem('highContrast') === 'true') {
+            document.body.classList.add('high-contrast');
+        }
+    }
+
+    function toggleContrast() {
+        document.body.classList.toggle('high-contrast');
+        localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+    }
+
+    contrastToggleButton.addEventListener('click', toggleContrast);
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !rollButton.disabled) {
             e.preventDefault();
@@ -271,11 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (e.key.toLowerCase() === 'n' && !gameActive) {
             initializeGame();
+        } else if (e.key.toLowerCase() === 'a') {
+            toggleContrast();
         }
     });
 
     window.addEventListener('resize', updatePiecePositions);
 
     // --- Início do Jogo ---
+    applyTheme();
     initializeGame();
 });

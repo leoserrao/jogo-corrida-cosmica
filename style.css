@@ -165,3 +165,68 @@ main {
     background-color: rgba(0,0,0,0.2);
     border-radius: 5px;
 }
+#contrast-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--square-bg);
+    border: 2px solid var(--square-border);
+    color: var(--text-color);
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+#contrast-toggle:hover,
+#contrast-toggle:focus {
+    background: var(--square-border);
+    border-color: var(--text-color);
+}
+
+/* --- High Contrast Theme --- */
+body.high-contrast {
+    --board-bg: #000000;
+    --square-bg: #222222;
+    --square-border: #FFFFFF;
+    --player1-color: #33CCFF; /* Bright Cyan */
+    --player2-color: #FF33CC; /* Bright Magenta */
+    --text-color: #FFFFFF;
+    --button-bg: #FFFF00; /* Yellow */
+    --button-hover-bg: #DDDD00;
+    --finish-line-color: #FFFF00;
+
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+.high-contrast main {
+    background-color: #000000;
+}
+
+.high-contrast #game-board {
+    background-color: #000000;
+}
+
+.high-contrast #roll-button {
+    background-color: var(--button-bg);
+    color: #000000;
+}
+
+.high-contrast #roll-button:hover,
+.high-contrast #roll-button:focus {
+    background-color: var(--button-hover-bg);
+    outline-color: #000000;
+}
+
+.high-contrast #dice {
+    color: #000000;
+    background-color: #FFFFFF;
+    border-color: #FFFFFF;
+}
+
+.high-contrast .square.finish {
+    color: #000000;
+}
