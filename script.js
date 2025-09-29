@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endGame(winner) {
         gameActive = false;
         const winnerName = winner === 1 ? "Você" : "O computador";
-        updateStatus(`${winnerName} venceu a corrida cósmica!`, true);
+        updateStatus(`${winnerName} venceu a corrida cósmica! Clique em Jogar Novamente ou pressione a tecla N no teclado.`, true);
 
         rollButton.removeEventListener('click', handlePlayerTurn);
         rollButton.addEventListener('click', initializeGame);
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         rollButton.textContent = "Lançar Dado";
         rollButton.disabled = false;
-        updateStatus("Bem-vindo à Corrida Cósmica! É a sua vez.", true);
+        updateStatus("Bem-vindo à Corrida Cósmica! Percorra as 30 casas e chegue ao planeta final antes do seu oponente! Controles: Clique em Lançar Dado ou pressione a Barra de Espaço no teclado para ativar o microfone e diga jogar. É a sua vez.", true);
     }
 
     // --- Event Listeners Globais ---
@@ -269,6 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     recognition.start();
                 } catch (err) { /* Ignora se já estiver ativo */ }
             }
+        } else if (e.key.toLowerCase() === 'n' && !gameActive) {
+            initializeGame();
         }
     });
 
