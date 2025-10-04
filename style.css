@@ -134,7 +134,7 @@ main {
     transform-style: preserve-3d;
 }
 
-#roll-button {
+.game-button {
     padding: 15px 30px;
     font-size: 1.2em;
     font-weight: bold;
@@ -146,12 +146,12 @@ main {
     transition: background-color 0.3s;
 }
 
-#roll-button:hover, #roll-button:focus {
+.game-button:hover, .game-button:focus {
     background-color: var(--button-hover-bg);
     outline: 3px solid var(--finish-line-color);
 }
 
-#roll-button:disabled {
+.game-button:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
 }
@@ -210,13 +210,13 @@ body.high-contrast {
     background-color: #000000;
 }
 
-.high-contrast #roll-button {
+.high-contrast .game-button {
     background-color: var(--button-bg);
     color: #000000;
 }
 
-.high-contrast #roll-button:hover,
-.high-contrast #roll-button:focus {
+.high-contrast .game-button:hover,
+.high-contrast .game-button:focus {
     background-color: var(--button-hover-bg);
     outline-color: #000000;
 }

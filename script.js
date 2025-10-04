@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let player2Piece = document.getElementById('player2');
     const diceElement = document.getElementById('dice');
     const rollButton = document.getElementById('roll-button');
+    const voiceButton = document.getElementById('voice-button');
     const statusMessage = document.getElementById('status-message');
     const contrastToggleButton = document.getElementById('contrast-toggle');
 
@@ -274,6 +275,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     contrastToggleButton.addEventListener('click', toggleContrast);
+
+    if (voiceButton) {
+        if (recognition) {
+            voiceButton.addEventListener('click', () => {
+                if (!rollButton.disabled) {
+                    try {
+                        updateStatus("Ouvindo... Diga 'jogar'!", false);
+                        recognition.start();
+                    } catch (err) {
+                        console.warn("Recognition already active.");
+                    }
+                }
+            });
+        } else {
+            voiceButton.disabled = true;
+            voiceButton.title = "Comando de voz não suportado neste navegador.";
+        }
+    }
     window.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !rollButton.disabled) {
             e.preventDefault();
