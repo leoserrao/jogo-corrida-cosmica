@@ -7,13 +7,18 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main>
+    <div id="rotate-overlay" aria-label="Gire o dispositivo para o modo paisagem">
+        <span class="rotate-icon">📱</span>
+        <p>Por favor, gire o dispositivo para o modo paisagem para jogar.</p>
+    </div>
+
+    <main id="game-content">
         <header>
             <h1>Corrida Cósmica 🚀</h1>
             <p class="instructions">
                 Percorra às 30 casas e chegue ao planeta final antes do seu oponente!
                 <br>
-                <strong>Controles:</strong> Clique em "Lançar Dado" ou pressione a <strong>Barra de Espaço</strong> para ativar o microfone e diga <strong>"jogar"</strong> É a sua vez.
+                <strong>Controles:</strong> Clique em "Lançar Dado" ou pressione a <strong>Barra de Espaço</strong> para ativar o microfone e diga <strong>"jogar"</strong>.
             </p>
             <button id="contrast-toggle" aria-label="Alternar Alto Contraste" title="Alternar Alto Contraste (tecla A)">🎨</button>
         </header>
@@ -45,6 +50,7 @@
         </div>
     </main>
 
+    <audio id="silent-audio" src="path/to/silent.mp3" preload="auto"></audio>
     <script src="script.js"></script>
 </body>
 </html>

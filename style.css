@@ -43,14 +43,20 @@ main {
 
 #game-board {
     display: grid;
-    grid-template-columns: repeat(10, 60px);
-    grid-auto-rows: 60px;
+    grid-template-columns: repeat(10, 1fr);
     gap: 5px;
     padding: 10px;
     background-color: #0b1424;
     border-radius: 10px;
     position: relative; /* Para posicionar as peças */
-    width: fit-content;
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+#game-board .square {
+    aspect-ratio: 1 / 1;
 }
 
 .square {
@@ -229,4 +235,151 @@ body.high-contrast {
 
 .high-contrast .square.finish {
     color: #000000;
+}
+
+/* --- Overlay para forçar orientação paisagem em mobile --- */
+#rotate-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: var(--board-bg);
+    color: var(--text-color);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 30px;
+    gap: 20px;
+}
+
+#rotate-overlay .rotate-icon {
+    font-size: 64px;
+    animation: rotatePhone 2s ease-in-out infinite;
+}
+
+#rotate-overlay p {
+    font-size: 1.3em;
+    font-weight: bold;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+@keyframes rotatePhone {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+}
+
+/* Mostrar overlay em modo retrato em telas pequenas */
+@media screen and (max-width: 900px) and (orientation: portrait) {
+    #rotate-overlay {
+        display: flex;
+    }
+
+    #game-content {
+        display: none !important;
+    }
+}
+
+/* --- Responsividade Mobile (landscape) --- */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+    body {
+        align-items: flex-start;
+        min-height: auto;
+    }
+
+    main {
+        padding: 10px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 100vw;
+        box-sizing: border-box;
+    }
+
+    header h1 {
+        font-size: 1.2em;
+        margin: 5px 0;
+    }
+
+    .instructions {
+        font-size: 0.75em;
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+
+    .game-container {
+        width: 100%;
+    }
+
+    #game-board {
+        max-width: 100%;
+        gap: 3px;
+        padding: 5px;
+    }
+
+    .square {
+        font-size: 0.7em;
+        border-width: 1px;
+    }
+
+    .piece {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+    }
+
+    .controls {
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    #dice {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5em;
+    }
+
+    .game-button {
+        padding: 8px 16px;
+        font-size: 0.85em;
+    }
+
+    #status-message {
+        font-size: 0.85em;
+        margin-top: 8px;
+        padding: 6px;
+    }
+
+    #contrast-toggle {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+        top: 10px;
+        right: 10px;
+    }
+
+    #avaliation {
+        margin-top: 10px;
+    }
+
+    #avaliation h2 { font-size: 1em; }
+    #avaliation h3 { font-size: 0.85em; }
+    #avaliation h4 { font-size: 0.75em; }
+    #avaliation img { width: 100px; height: 100px; }
+}
+
+/* Telas muito pequenas em landscape (ex: celulares) */
+@media screen and (max-height: 400px) and (orientation: landscape) {
+    .instructions {
+        display: none;
+    }
+
+    header h1 {
+        font-size: 1em;
+        margin: 2px 0;
+    }
+
+    #avaliation {
+        display: none;
+    }
 }

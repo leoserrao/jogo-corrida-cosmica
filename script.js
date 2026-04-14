@@ -311,6 +311,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('resize', updatePiecePositions);
 
+    // --- Orientação da Tela ---
+    // Tenta travar a orientação em landscape (falha silenciosamente se não suportado)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+            // Navegador não suporta ou não está em fullscreen - overlay CSS cuida disso
+        });
+    }
+
+    // Recalcula posições das peças quando a orientação muda
+    window.addEventListener('orientationchange', () => {
+        setTimeout(updatePiecePositions, 300);
+    });
+
     // --- Início do Jogo ---
     applyTheme();
     initializeGame();
